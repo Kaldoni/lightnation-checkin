@@ -8,6 +8,7 @@ const COLORS = {
   navyLight: "#263560",
   sage: "#5C7A5E",
   rose: "#C4606A",
+  red: "#6b040e",
   warm: "#F5E6D0",
   text: "#2C1A0E",
 };
@@ -35,6 +36,55 @@ function Badge({ color, children }) {
   );
 }
 
+function BrandLogo() {
+  const rays = Array.from({ length: 16 }, (_, index) => ({
+    id: index,
+    rotate: index * 22.5,
+  }));
+
+  return (
+    <div
+      aria-label="LightNation logo"
+      style={{
+        width: 52,
+        height: 52,
+        borderRadius: "50%",
+        background: "#ff5b00",
+        position: "relative",
+        overflow: "hidden",
+        boxShadow: "0 0 0 4px rgba(255, 91, 0, 0.14)",
+        flexShrink: 0,
+      }}
+    >
+      {rays.map((ray) => (
+        <span
+          key={ray.id}
+          style={{
+            position: "absolute",
+            left: "50%",
+            top: "50%",
+            width: "18%",
+            height: "80%",
+            transform: `translate(-50%, -50%) rotate(${ray.rotate}deg) translateY(-18%)`,
+            transformOrigin: "center center",
+            borderRadius: 8,
+            background: "rgba(255,255,255,0.08)",
+            boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.05)",
+          }}
+        />
+      ))}
+      <div
+        style={{
+          position: "absolute",
+          inset: "22%",
+          borderRadius: "50%",
+          background: "rgba(255,255,255,0.12)",
+        }}
+      />
+    </div>
+  );
+}
+
 function ChildCard({ child, onCheckIn, onCheckOut, onSelect, selected }) {
   return (
     <div
@@ -51,7 +101,7 @@ function ChildCard({ child, onCheckIn, onCheckOut, onSelect, selected }) {
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div>
-          <div style={{ fontFamily: "'Playfair Display', serif", fontWeight: 700, fontSize: 15, color: COLORS.navy }}>
+          <div style={{ fontFamily: "'Cotham Sans', sans-serif", fontWeight: 700, fontSize: 15, color: COLORS.navy }}>
             {child.name}
           </div>
           <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>Age {child.age} · Tag: <b>{child.tag}</b></div>
@@ -124,37 +174,29 @@ function AIChat({ children: childList }) {
     const systemPrompt = `You are a helpful assistant for a children's church check-in system. Today is Sunday. Here is the current attendance data:\n\n${attendanceSummary}\n\nAnswer questions about the children, attendance, allergies, guardians, or anything related. Be concise, warm, and helpful.`;
 
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
-          system: systemPrompt,
-          messages: [
-            ...messages.filter(m => m.role !== "assistant" || m !== messages[0]).map(m => ({
-              role: m.role,
-              content: m.text
-            })),
-            { role: "user", content: userMsg }
-          ]
-        })
-      });
+      const payload = {
+        system: systemPrompt,
+        messages: [
+          ...messages.filter(m => m.role !== 'assistant' || m !== messages[0]).map(m => ({ role: m.role, content: m.text })),
+          { role: 'user', content: userMsg }
+        ]
+      };
+      const res = await fetch('/api/ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       const data = await res.json();
-      const reply = data.content?.[0]?.text || "Sorry, I couldn't get a response.";
-      setMessages(prev => [...prev, { role: "assistant", text: reply }]);
-    } catch {
-      setMessages(prev => [...prev, { role: "assistant", text: "Error connecting to AI. Please try again." }]);
+      const reply = data.reply || 'Sorry, I could not get a response from the assistant.';
+      setMessages(prev => [...prev, { role: 'assistant', text: reply }]);
+    } catch (err) {
+      setMessages(prev => [...prev, { role: 'assistant', text: 'Error connecting to AI. Please try again.' }]);
     }
     setLoading(false);
   }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#fff", borderRadius: 20, overflow: "hidden", border: `1px solid #e8ddd0` }}>
-      <div style={{ background: COLORS.navy, padding: "16px 20px", display: "flex", alignItems: "center", gap: 10 }}>
-        <div style={{ width: 36, height: 36, borderRadius: "50%", background: COLORS.gold, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>✦</div>
+      <div style={{ background: COLORS.red, padding: "16px 20px", display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ width: 36, height: 36, borderRadius: "20%", background: COLORS.gold, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>✦</div>
         <div>
-          <div style={{ color: "#fff", fontFamily: "'Playfair Display', serif", fontWeight: 700, fontSize: 15 }}>AI Assistant</div>
+          <div style={{ color: "#fff", fontFamily: "'Cotham Sans', sans-serif", fontWeight: 700, fontSize: 15 }}>AI Assistant</div>
           <div style={{ color: COLORS.goldLight, fontSize: 11 }}>Children's Church Helper</div>
         </div>
       </div>
@@ -163,7 +205,7 @@ function AIChat({ children: childList }) {
           <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start" }}>
             <div style={{
               maxWidth: "82%", padding: "10px 14px", borderRadius: m.role === "user" ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
-              background: m.role === "user" ? COLORS.navy : "#fff",
+              background: m.role === "user" ? COLORS.blue : "#fff",
               color: m.role === "user" ? "#fff" : COLORS.text,
               fontSize: 13, lineHeight: 1.5,
               boxShadow: "0 1px 4px #0001",
@@ -205,21 +247,28 @@ function AIChat({ children: childList }) {
   );
 }
 
-function AddChildModal({ onAdd, onClose }) {
-  const [form, setForm] = useState({ name: "", age: "", guardian: "", guardianPhone: "", allergies: "" });
+function AddChildModal({ onAdd, onClose, initial }) {
+  // accept optional initial values via props
+  const [form, setForm] = useState(initial ? { id: initial.id, name: initial.name || "", age: initial.age || "", guardian: initial.guardian || "", guardianPhone: initial.guardianPhone || "", allergies: initial.allergies || "", tag: initial.tag } : { name: "", age: "", guardian: "", guardianPhone: "", allergies: "" });
+
+  useEffect(() => {
+    if (initial) {
+      setForm({ id: initial.id, name: initial.name || "", age: initial.age || "", guardian: initial.guardian || "", guardianPhone: initial.guardianPhone || "", allergies: initial.allergies || "", tag: initial.tag });
+    } else {
+      setForm({ name: "", age: "", guardian: "", guardianPhone: "", allergies: "" });
+    }
+  }, [initial]);
 
   function submit() {
     if (!form.name || !form.age || !form.guardian) return;
-    onAdd({
-      id: Date.now(),
+    const payload = {
       ...form,
       age: Number(form.age),
       allergies: form.allergies || "None",
-      checkedIn: false,
-      checkInTime: null,
-      checkOutTime: null,
-      tag: "A" + String(Math.floor(Math.random() * 900) + 100),
-    });
+      tag: form.tag || "A" + String(Math.floor(Math.random() * 900) + 100),
+    };
+    console.log('AddChildModal submit payload:', payload);
+    onAdd(payload);
     onClose();
   }
 
@@ -238,8 +287,8 @@ function AddChildModal({ onAdd, onClose }) {
 
   return (
     <div style={{ position: "fixed", inset: 0, background: "#0007", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ background: "#fff", borderRadius: 20, padding: 28, width: 360, maxWidth: "95vw", boxShadow: "0 20px 60px #0003" }}>
-        <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 20, fontWeight: 700, color: COLORS.navy, marginBottom: 20 }}>Register New Child</div>
+      <div style={{ background: "#e8ddd0", borderRadius: 20, padding: 28, width: 360, maxWidth: "95vw", boxShadow: "0 20px 60px #0003" }}>
+        <div style={{ fontFamily: "'Cotham Sans', sans-serif", fontSize: 20, fontWeight: 700, color: COLORS.navy, marginBottom: 20 }}>Register New Child</div>
         {field("Child's Full Name", "name", "e.g. Amara Johnson")}
         {field("Age", "age", "e.g. 7", "number")}
         {field("Guardian Name", "guardian", "e.g. Mrs. Johnson")}
@@ -256,6 +305,7 @@ function AddChildModal({ onAdd, onClose }) {
 
 export default function App() {
   const [children, setChildren] = useState(initialChildren);
+  const [editingChild, setEditingChild] = useState(null);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const [selectedChild, setSelectedChild] = useState(null);
@@ -268,21 +318,109 @@ export default function App() {
     setTimeout(() => setToast(null), 2500);
   }
 
-  function checkIn(id) {
-    setChildren(prev => prev.map(c => c.id === id ? { ...c, checkedIn: true, checkInTime: now(), checkOutTime: null } : c));
-    const child = children.find(c => c.id === id);
-    showToast(`✓ ${child?.name} checked in!`, COLORS.sage);
+  // Load children from server on mount
+  useEffect(() => {
+    let mounted = true;
+    async function load() {
+      try {
+        const res = await fetch('/api/children');
+        if (!res.ok) throw new Error('Failed to load');
+        const data = await res.json();
+        if (mounted) setChildren(data);
+      } catch (e) {
+        showToast('Could not load children from server', COLORS.rose);
+      }
+    }
+    load();
+    return () => { mounted = false };
+  }, []);
+
+  async function checkIn(id) {
+    try {
+      const res = await fetch('/api/checkin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
+      if (!res.ok) throw new Error('checkin failed');
+      const json = await res.json();
+      setChildren(prev => prev.map(c => c.id === id ? { ...c, checkedIn: true, checkInTime: json.checkInTime, checkOutTime: null } : c));
+      const child = children.find(c => c.id === id);
+      showToast(`✓ ${child?.name || 'Child'} checked in!`, COLORS.sage);
+    } catch (e) {
+      showToast('Check-in failed', COLORS.rose);
+    }
   }
 
-  function checkOut(id) {
-    setChildren(prev => prev.map(c => c.id === id ? { ...c, checkedIn: false, checkOutTime: now() } : c));
-    const child = children.find(c => c.id === id);
-    showToast(`${child?.name} checked out.`, COLORS.rose);
+  async function checkOut(id) {
+    try {
+      const res = await fetch('/api/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
+      if (!res.ok) throw new Error('checkout failed');
+      const json = await res.json();
+      setChildren(prev => prev.map(c => c.id === id ? { ...c, checkedIn: false, checkOutTime: json.checkOutTime } : c));
+      const child = children.find(c => c.id === id);
+      showToast(`${child?.name || 'Child'} checked out.`, COLORS.rose);
+    } catch (e) {
+      showToast('Check-out failed', COLORS.rose);
+    }
   }
 
-  function addChild(child) {
-    setChildren(prev => [...prev, child]);
-    showToast(`${child.name} registered!`, COLORS.gold);
+  async function addChild(child) {
+    try {
+      const res = await fetch('/api/children', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(child) });
+      if (!res.ok) throw new Error('create failed');
+      const created = await res.json();
+      // refresh list from server (ensure consistency)
+      const r = await fetch(`/api/children`);
+      const all = await r.json();
+      setChildren(all);
+      showToast(`${created.name || child.name} registered!`, COLORS.gold);
+    } catch (e) {
+      showToast('Registration failed', COLORS.rose);
+    }
+  }
+
+  async function handleSaveChild(child) {
+    try {
+      if (child.id) {
+        const res = await fetch(`/api/children/${child.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(child) });
+        if (!res.ok) {
+          const errText = await res.text().catch(() => 'update failed');
+          console.error('PUT error', res.status, errText);
+          throw new Error(errText || 'update failed');
+        }
+        const updated = await res.json().catch(() => null);
+        console.log('PUT response', updated);
+        showToast(`${child.name} updated!`, COLORS.gold);
+      } else {
+        const res = await fetch('/api/children', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(child) });
+        if (!res.ok) {
+          const errText = await res.text().catch(() => 'create failed');
+          console.error('POST error', res.status, errText);
+          throw new Error(errText || 'create failed');
+        }
+        const created = await res.json().catch(() => null);
+        console.log('POST response', created);
+        showToast(`${created?.name || child.name} registered!`, COLORS.gold);
+      }
+      // refresh authoritative list from server
+      const r = await fetch(`/api/children`);
+      if (!r.ok) throw new Error('refresh failed');
+      const all = await r.json();
+      setChildren(all);
+    } catch (e) {
+      console.error('handleSaveChild error:', e);
+      showToast(`Save failed: ${e.message || ''}`, COLORS.rose);
+    }
+  }
+
+  async function deleteChild(id) {
+    try {
+      await fetch(`/api/children/${id}`, { method: 'DELETE' });
+      const r = await fetch(`/api/children`);
+      const all = await r.json();
+      setChildren(all);
+      showToast('Removed', COLORS.rose);
+      setSelectedChild(null);
+    } catch (e) {
+      showToast('Remove failed', COLORS.rose);
+    }
   }
 
   const filtered = children.filter(c => {
@@ -297,7 +435,7 @@ export default function App() {
 
   return (
     <div style={{ minHeight: "100vh", background: COLORS.cream, fontFamily: "'Lato', sans-serif", color: COLORS.text }}>
-      <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Lato:wght@400;700&display=swap" rel="stylesheet" />
+      <link href="https://fonts.googleapis.com/css2?family=Cotham+Sans:wght@400;700&family=Lato:wght@400;700&display=swap" rel="stylesheet" />
 
       {/* Toast */}
       {toast && (
@@ -311,22 +449,25 @@ export default function App() {
         </div>
       )}
 
-      {showAdd && <AddChildModal onAdd={addChild} onClose={() => setShowAdd(false)} />}
+      {showAdd && <AddChildModal onAdd={handleSaveChild} onClose={() => { setShowAdd(false); setEditingChild(null); }} initial={editingChild} />}
 
       {/* Header */}
-      <div style={{ background: COLORS.navy, padding: "20px 24px 0" }}>
+      <div style={{ background: COLORS.red, padding: "20px 24px 0" }}>
         <div style={{ maxWidth: 900, margin: "0 auto" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-            <div>
-              <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, color: "#fff", fontWeight: 900, letterSpacing: -0.5 }}>
-                ✦ Children's Church
-              </div>
-              <div style={{ color: COLORS.goldLight, fontSize: 12, marginTop: 2 }}>
-                Sunday Check-In System
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <BrandLogo />
+              <div>
+                <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, color: "#fff", fontWeight: 900, letterSpacing: -0.5 }}>
+                  Light Nation Children's Church
+                </div>
+                <div style={{ color: COLORS.goldLight, fontSize: 12, marginTop: 2 }}>
+                  Sunday Check-In System
+                </div>
               </div>
             </div>
             <button
-              onClick={() => setShowAdd(true)}
+              onClick={() => { setEditingChild(null); setShowAdd(true); }}
               style={{ padding: "9px 18px", borderRadius: 10, border: "none", background: COLORS.gold, color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer" }}
             >
               + Register Child
@@ -342,7 +483,7 @@ export default function App() {
               { label: "Allergy Alerts", value: allergyCount, color: "#fbbf24" },
             ].map(s => (
               <div key={s.label} style={{ flex: 1, background: "#ffffff15", borderRadius: 12, padding: "12px 14px", textAlign: "center" }}>
-                <div style={{ fontSize: 22, fontWeight: 900, color: s.color, fontFamily: "'Playfair Display', serif" }}>{s.value}</div>
+                <div style={{ fontSize: 22, fontWeight: 900, color: s.color, fontFamily: "'Cotham Sans', sans-serif" }}>{s.value}</div>
                 <div style={{ fontSize: 10, color: "#aaa", marginTop: 2 }}>{s.label}</div>
               </div>
             ))}
@@ -416,8 +557,12 @@ export default function App() {
               return (
                 <div style={{ marginTop: 24, background: "#fff", borderRadius: 20, padding: 24, border: `2px solid ${COLORS.gold}` }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                    <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 700, color: COLORS.navy }}>{c.name}</div>
-                    <button onClick={() => setSelectedChild(null)} style={{ background: "none", border: "none", fontSize: 18, cursor: "pointer", color: "#aaa" }}>✕</button>
+                    <div style={{ fontFamily: "'Cotham Sans', sans-serif", fontSize: 18, fontWeight: 700, color: COLORS.navy }}>{c.name}</div>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <button onClick={() => { setEditingChild(c); setShowAdd(true); }} style={{ padding: '6px 10px', borderRadius: 8, border: 'none', background: COLORS.navyLight, color: '#fff', cursor: 'pointer' }}>Edit</button>
+                      <button onClick={async () => { if (!confirm('Remove this child?')) return; await deleteChild(c.id); }} style={{ padding: '6px 10px', borderRadius: 8, border: 'none', background: COLORS.rose, color: '#fff', cursor: 'pointer' }}>Remove</button>
+                      <button onClick={() => setSelectedChild(null)} style={{ background: "none", border: "none", fontSize: 18, cursor: "pointer", color: "#aaa" }}>✕</button>
+                    </div>
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, fontSize: 13 }}>
                     {[
