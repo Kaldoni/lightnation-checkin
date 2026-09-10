@@ -11,6 +11,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+if (process.env.VERCEL) {
+  app.get('/', (req, res) => res.json({ ok: true, service: 'LightNation API', database: 'supabase' }));
+}
+
 const supabase = createClient(config.SUPABASE_URL, config.SUPABASE_SECRET_KEY, {
   auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
   global: { fetch: (url, options) => fetch(url, { ...options, signal: AbortSignal.timeout(15000) }) }
@@ -232,11 +236,13 @@ app.use('/api', (req, res) => res.status(404).json({ error: 'API route not found
 
 // Serve client build if present
 const clientDist = path.join(__dirname, '..', 'frontend', 'dist');
-if (fs.existsSync(clientDist)) {
+if (!process.env.VERCEL && fs.existsSync(clientDist)) {
   app.use(express.static(clientDist));
-  app.get('*', (req, res) => res.sendFile(path.join(clientDist, 'index.html')));
+  app.get(/.*/, (req, res) => res.sendFile(path.join(clientDist, 'index.html')));
 }
 
+app.use((req, res) => res.status(404).json({ error: 'Route not found.' }));
+
 const PORT = config.PORT || 3000;
-if (require.main === module) app.listen(PORT, () => console.log(`Server listening on http://localhost:${PORT} using Supabase`));
-module.exports = { app };
+if (!process.env.VERCEL && require.main === module) app.listen(PORT, () => console.log(`Server listening on http://localhost:${PORT} using Supabase`));
+module.exports = app;

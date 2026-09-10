@@ -46,6 +46,8 @@ The frontend sends requests to /api, and Vite proxies them to port 3000. Update 
 
 ## Build and verify
 
+For a separate Vercel backend project, set its Root Directory to `backend` and use Express framework detection. Set `SUPABASE_URL` and `SUPABASE_SECRET_KEY` in the project's Production environment and redeploy after changes. The ignored local `.env` is not deployed. The backend exports its Express request handler directly; on Vercel, `/` returns service information and `/api/health` checks Supabase. It does not serve the frontend build on Vercel. A separate frontend project should use Root Directory `frontend`, with `/api` proxied to the backend as described above.
+
 - npm run build: build the frontend into frontend/dist.
 - npm start: run the backend and serve the built frontend on port 3000.
 - npm test: run backend regression tests with mocked Supabase requests.

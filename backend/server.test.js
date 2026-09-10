@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const { loadConfig, databaseError } = require('./config');
 
 process.env.NODE_ENV = 'production';
+process.env.VERCEL = '1';
 process.env.SUPABASE_URL = 'https://test.supabase.co';
 process.env.SUPABASE_SECRET_KEY = 'test-server-key';
 const originalFetch = global.fetch;
@@ -14,7 +15,7 @@ global.fetch = async (url, options) => {
   if (failure) throw new TypeError('fetch failed');
   return new Response(JSON.stringify([{ id: 1 }]), { headers: { 'Content-Type': 'application/json' } });
 };
-const { app } = require('./index');
+const app = require('./index');
 let server;
 let base;
 before(async () => {
@@ -22,6 +23,16 @@ before(async () => {
   base = `http://127.0.0.1:${server.address().port}`;
 });
 after(async () => { await new Promise(resolve => server.close(resolve)); global.fetch = originalFetch; });
+
+test('Vercel entry exports a request handler and serves a JSON root', async () => {
+  assert.equal(typeof app, 'function');
+  const response = await fetch(base + '/');
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { ok: true, service: 'LightNation API', database: 'supabase' });
+  const missing = await fetch(base + '/missing');
+  assert.equal(missing.status, 404);
+  assert.deepEqual(await missing.json(), { error: 'Route not found.' });
+});
 
 test('production configuration preserves deployment variables', () => {
   const config = loadConfig({ NODE_ENV: 'production', SUPABASE_URL: 'https://deployed.supabase.co', SUPABASE_SECRET_KEY: 'server-key' });
