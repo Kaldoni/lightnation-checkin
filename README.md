@@ -1,194 +1,55 @@
 # LightNation Check-In
 
-LightNation Check-In is a lightweight digital check-in application built for churches and ministries. It provides an easy-to-use interface for registering children, checking them in/out, tracking attendance, and managing quick edits or deletions.
+Church check-in app with a React/Vite frontend and an Express backend using Supabase, or SQLite when Supabase is not configured.
 
-This repository contains a React frontend (Vite) and a Node/Express backend that persists data to a file-based SQLite database.
+## Directory layout
 
-## Key features
-
-- Quick child registration and editing
-- Check-in / Check-out workflow with timestamps
-- Attendance summary endpoint
-- Simple AI assistant proxy endpoint (configurable via environment variable)
-- Local persistence using SQLite (`server/data.db`)
-
-## Tech stack
-
-- Frontend: React + Vite
-- Backend: Node.js + Express
-- Database: sqlite3 (file-based)
-
-## Prerequisites
-
-- Node.js 18+ and npm (or pnpm/yarn)
-- Git (to clone the repo)
-
-Optional:
-- An OpenAI API key (set as `OPENAI_API_KEY` in the server env) to enable the AI assistant endpoint. When not set, the server uses a local fallback response.
-
-## Repository layout
-
-- `client/` — React + Vite frontend
-- `server/` — Express backend with `index.js` and `data.db` (created at runtime)
-- `package.json` — root scripts to help run server and client
-
-## Installation (local development)
-
-1. Clone the repo:
-
-```bash
-git clone https://github.com/Oluwayemisi429/lightnation-checkin.git
-cd lightnation-checkin
+```text
+frontend/
+  src/                 React components and API client
+  public/              Static assets
+  package.json         Frontend dependencies and commands
+  vite.config.js       Development API proxy
+backend/
+  index.js             Express API and production frontend serving
+  config.js            Environment loading and database error handling
+  server.test.js       Backend regression tests
+  supabase-schema.sql  Supabase tables
+  .env.example         Environment template
+  package.json         Backend dependencies and commands
+package.json           Commands to run both applications
 ```
 
-2. Install root dependencies (some scripts rely on root dev tools):
+The former duplicate app and nested Git repository are preserved locally in the ignored .local-backup directory. Dependencies, builds, local databases, and secrets are excluded from Git.
 
-```bash
-npm install
+## Setup
+
+Use Node.js 22 or newer. From the repository root:
+
+```sh
+npm run install:all
 ```
 
-3. Install client dependencies:
+Copy backend/.env.example to backend/.env and set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (or SUPABASE_SECRET_KEY) to your project's server credentials. Never put these keys in frontend code. For a new Supabase database, run backend/supabase-schema.sql in the SQL editor. Startup does not insert demo records into Supabase.
 
-```bash
-cd client
-npm install
-cd ..
-```
+In development, backend/.env overrides inherited environment variables. In production (NODE_ENV=production), deployment variables take precedence. Leave both Supabase settings empty to use backend/data.db. Incomplete configuration fails explicitly; connection failures never switch storage silently.
 
-4. (Optional) If you plan to run the backend in development with automatic restarts, ensure `nodemon` is available via the root `npm install` step or install it globally.
+## Running
 
-## Running the app
-
-You can run the backend and frontend in separate terminals.
-
-Start the backend (development):
-
-```bash
-# from repo root
-npm run server:dev
-```
-
-Start the frontend (Vite dev server):
-
-```bash
-cd client
+```sh
 npm run dev
 ```
 
-There is also a combined `dev` script in the root that runs both concurrently (if available):
+Frontend: http://localhost:5173. Backend: http://localhost:3000. To run them independently, use npm run dev:frontend and npm run dev:backend in separate terminals, or run npm run dev inside either folder.
 
-```bash
-# from repo root
-npm run dev
-```
+The frontend sends requests to /api, and Vite proxies them to port 3000. Update frontend/vite.config.js if you change the backend PORT. For separate production hosts, configure your frontend host to proxy /api to the backend.
 
-Production-style serve (build client then serve via Express):
+## Build and verify
 
-```bash
-cd client
-npm run build
-cd ..
-# Start production server (serves built client)
-npm run server:start
-```
+- npm run build: build the frontend into frontend/dist.
+- npm start: run the backend and serve the built frontend on port 3000.
+- npm test: run backend regression tests with mocked Supabase requests.
 
-After starting the dev servers, the frontend is available at:
+GET /api/health verifies database connectivity and returns { "ok": true, "database": "supabase" } when connected. A 503 explains network failures or missing tables. Restart the backend after changing environment settings.
 
-- Vite dev: http://localhost:5173/
-- Backend API: http://localhost:3000/
-
-## Environment variables
-
-Create a `.env` file in the `server/` folder or set env vars in your shell. Supported variables:
-
-- `PORT` — port for the backend (default 3000)
-- `OPENAI_API_KEY` — optional OpenAI key to enable AI assistant proxy
-
-Example `.env` (create `server/.env` or set in your environment):
-
-```env
-PORT=3000
-OPENAI_API_KEY=
-```
-
-## API endpoints
-
-Main server endpoints (base: `http://localhost:3000/api`):
-
-- `GET /api/children` — list all registered children
-- `POST /api/children` — create a new child (JSON body)
-- `PUT /api/children/:id` — update an existing child (JSON body)
-- `DELETE /api/children/:id` — remove a child by id
-- `POST /api/checkin` — check-in payload (accepts { id })
-- `POST /api/checkout` — check-out payload (accepts { id })
-- `GET /api/attendance` — attendance summary
-- `POST /api/ai` — AI assistant proxy (server forwards to OpenAI when `OPENAI_API_KEY` set; otherwise returns fallback)
-
-Example create payload (JSON):
-
-```json
-{
-	"name": "Amara",
-	"age": 7,
-	"guardian": "Mrs. Johnson",
-	"guardianPhone": "080-1234-5678",
-	"allergies": "Peanuts",
-	"tag": "A001"
-}
-```
-
-## Database
-
-- The server uses SQLite and creates `server/data.db` automatically on first run.
-- You can inspect the DB with any SQLite client.
-
-## Development notes & troubleshooting
-
-- If you get address-in-use errors for port 3000 or 5173, determine which process is listening and stop it (Windows example):
-
-```powershell
-netstat -aon | findstr :3000
-taskkill /PID <pid> /F
-```
-
-- If PUT/POST requests fail from PowerShell's `Invoke-RestMethod`, prefer using Node scripts or a REST client (Postman / Insomnia) to avoid quoting/JSON issues.
-
-- When editing a child in the UI, the app should issue a `PUT /api/children/:id` and then refresh the list from the server. If cards do not update, check the browser console and the server logs for errors, and ensure the backend is running.
-
-## UI / Styling notes
-
-- The project uses Google Fonts. The default font in the UI has been changed to `Cotham Sans`.
-
-## Common commands
-
-- Install (root): `npm install`
-- Install (client): `cd client && npm install`
-- Start server (dev): `npm run server:dev`
-- Start client (dev): `cd client && npm run dev`
-- Run both: `npm run dev`
-- Build client: `cd client && npm run build`
-- Start prod server: `npm run server:start`
-
-## Next steps / TODO
-
-- Test edit/delete flows end-to-end in the browser
-- Verify all font replacements and UI polish
-- Create a GitHub fork and push a feature branch for review
-
-## Contributing
-
-Contributions, fixes, and improvements are welcome. Please open an issue or a pull request with a clear description of the change.
-
-## License
-
-This project does not include a license file. Add a `LICENSE` if you plan to publish or share this project publicly.
-
----
-
-If you'd like, I can also:
-
-- add a short demo GIF or screenshots to this README
-- add a `.env.example` with recommended variables
-- create a small troubleshooting script to check ports and processes on Windows
-
-Tell me which of those you'd like next.
+API routes under /api: children CRUD, checkin, checkout, attendance, and ai. Attendance uses ISO timestamps displayed in local time; editing registration details preserves attendance. AI_KEY, AI_PROVIDER, and AI_MODEL configure the optional AI proxy; without a key it returns database summaries.
