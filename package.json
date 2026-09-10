@@ -1,0 +1,14 @@
+{
+  "name": "lightnation-checkin-root",
+  "private": true,
+  "scripts": {
+    "dev": "npm --prefix lightnation-checkin run dev",
+    "install:client": "npm --prefix lightnation-checkin run client:install",
+    "start": "npm --prefix lightnation-checkin run start"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.116.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2"
+  }
+}
