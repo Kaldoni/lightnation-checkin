@@ -5,10 +5,11 @@ export default function TeacherLogin({ children }) {
   const [teacher, setTeacher] = useState(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   useEffect(() => {
-    const expired = () => { setTeacher(null); setPassword(''); setError('Your session expired. Please sign in again.'); };
+    const expired = () => { setTeacher(null); setPassword(''); setShowPassword(false); setError('Your session expired. Please sign in again.'); };
     window.addEventListener('session-expired', expired);
     return () => window.removeEventListener('session-expired', expired);
   }, []);
@@ -18,7 +19,7 @@ export default function TeacherLogin({ children }) {
     setBusy(true); setError('');
     try {
       const session = await request('/auth/login', { method: 'POST', body: { email, password } });
-      setAccessToken(session.accessToken); setTeacher(session.email); setPassword('');
+      setAccessToken(session.accessToken); setTeacher(session.email); setPassword(''); setShowPassword(false);
     } catch (failure) { setError(failure.message); }
     finally { setBusy(false); }
   }
@@ -37,7 +38,10 @@ export default function TeacherLogin({ children }) {
       <label htmlFor="teacher-email">Email</label>
       <input id="teacher-email" type="email" autoComplete="username" required value={email} onChange={e => setEmail(e.target.value)} style={inputStyle} />
       <label htmlFor="teacher-password">Password</label>
-      <input id="teacher-password" type="password" autoComplete="current-password" required value={password} onChange={e => setPassword(e.target.value)} style={inputStyle} />
+      <div style={{ position: 'relative', margin: '8px 0 18px' }}>
+        <input id="teacher-password" type={showPassword ? 'text' : 'password'} autoComplete="current-password" required value={password} onChange={e => setPassword(e.target.value)} style={{ ...inputStyle, margin: 0, paddingRight: 76 }} />
+        <button type="button" aria-label={showPassword ? 'Hide password' : 'Show password'} aria-controls="teacher-password" onClick={() => setShowPassword(visible => !visible)} style={{ position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)', padding: '10px 8px', border: 0, borderRadius: 6, background: 'transparent', color: '#1A2744', fontWeight: 700, cursor: 'pointer' }}>{showPassword ? 'Hide' : 'Show'}</button>
+      </div>
       {error && <p role="alert" style={{ color: '#a12b36' }}>{error}</p>}
       <button disabled={busy} type="submit" style={{ width: '100%', padding: 12, border: 0, borderRadius: 10, background: '#1A2744', color: '#fff', cursor: 'pointer', fontSize: 16 }}>{busy ? 'Signing in...' : 'Sign in'}</button>
     </form>
