@@ -2,16 +2,8 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
     {
-      "source": "/api/:health",
-      "destination": "https://lightnation-2sw1y439p-kaldonis-projects.vercel.app/api/health"
-    },
-        {
-      "source": "/api/:children",
-      "destination": "https://lightnation-2sw1y439p-kaldonis-projects.vercel.app/api/children"
-    },
-        {
-      "source": "/api/:attendance",
-      "destination": "https://lightnation-2sw1y439p-kaldonis-projects.vercel.app/api/attendance"
+      "source": "/api/:path*",
+      "destination": "https://lightnation-2sw1y439p-kaldonis-projects.vercel.app/api/:path*"
     },
     {
       "source": "/(.*)",
