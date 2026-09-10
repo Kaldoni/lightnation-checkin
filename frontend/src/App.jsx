@@ -9,7 +9,7 @@ const COLORS = {
   navyLight: "#263560",
   sage: "#5C7A5E",
   rose: "#C4606A",
-  red: "#6b040e",
+  red: "#ff2600",
   warm: "#F5E6D0",
   text: "#2C1A0E",
 };
@@ -37,10 +37,10 @@ function BrandLogo() {
         width: 52,
         height: 52,
         borderRadius: "50%",
-        background: "#ff5b00",
+        background: "#1A2744",
         position: "relative",
         overflow: "hidden",
-        boxShadow: "0 0 0 4px rgba(255, 91, 0, 0.14)",
+        boxShadow: "0 0 0 4px rgb(255, 255, 255)",
         flexShrink: 0,
       }}
     >
