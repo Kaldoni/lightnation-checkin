@@ -4,6 +4,7 @@ const fs = require('fs');
 const cors = require('cors');
 const { loadConfig, databaseError } = require('./config');
 const { createClient } = require('@supabase/supabase-js');
+const { registerAuth } = require('./auth');
 
 const config = loadConfig();
 
@@ -59,6 +60,8 @@ app.get('/api/health', async (req, res) => {
     return res.json({ ok: true, database: 'supabase' });
   } catch (error) { return sendDatabaseError(res, error); }
 });
+
+registerAuth(app, config, supabase);
 
 app.use('/api', (req, res, next) => {
   const isToggle = ['/checkin', '/checkout'].includes(req.path);

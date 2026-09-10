@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 const source = await readFile(new URL('./api.js', import.meta.url), 'utf8');
-const { request } = await import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`);
+const { request, setAccessToken } = await import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`);
 const originalFetch = globalThis.fetch;
 after(() => { globalThis.fetch = originalFetch; });
 
@@ -36,4 +36,18 @@ test('successful form submissions preserve JSON payload and response', async () 
     return new Response('{"id":1}');
   };
   assert.deepEqual(await request('/children', { method: 'POST', body: { name: 'Test' } }), { id: 1 });
+});
+
+test('teacher tokens authorize requests and are cleared when the session expires', async () => {
+  setAccessToken('teacher-token');
+  globalThis.fetch = async (url, options) => {
+    assert.equal(options.headers.Authorization, 'Bearer teacher-token');
+    return new Response('{"error":"Session expired"}', { status: 401 });
+  };
+  await assert.rejects(request('/children'), /Session expired/);
+  globalThis.fetch = async (url, options) => {
+    assert.equal(options.headers.Authorization, undefined);
+    return new Response('[]');
+  };
+  await request('/children');
 });

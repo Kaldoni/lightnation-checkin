@@ -1,15 +1,22 @@
+let accessToken = '';
+export function setAccessToken(token) { accessToken = token || ''; }
+
 export async function request(path, options = {}) {
   let response;
   try {
     response = await fetch(`/api${path}`, {
       ...options,
-      headers: { 'Content-Type': 'application/json', ...options.headers },
+      headers: { 'Content-Type': 'application/json', ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}), ...options.headers },
       body: options.body === undefined ? undefined : JSON.stringify(options.body),
     });
   } catch {
     throw new Error('Cannot reach the server. Check that the backend is running.');
   }
   const data = await response.json().catch(() => null);
+  if (response.status === 401 && accessToken) {
+    setAccessToken('');
+    if (typeof window !== 'undefined') window.dispatchEvent(new Event('session-expired'));
+  }
   if (!response.ok || data?.error) {
     throw new Error(errorMessage(data?.error) || errorMessage(data) || `Server request failed (${response.status}).`);
   }

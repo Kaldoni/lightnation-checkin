@@ -55,3 +55,11 @@ For a separate Vercel backend project, set its Root Directory to `backend` and u
 GET /api/health verifies database connectivity and returns { "ok": true, "database": "supabase" } when connected. A 503 explains network failures or missing tables. Restart the backend after changing environment settings.
 
 API routes under /api: children CRUD, checkin, checkout, attendance, and ai. Attendance uses ISO timestamps displayed in local time; editing registration details preserves attendance. AI_KEY, AI_PROVIDER, and AI_MODEL configure the optional AI proxy; without a key it returns database summaries.
+
+## Teacher access
+
+Teachers sign in with Supabase Auth. Accounts must have app_metadata.role set to teacher by an administrator; there is no public registration screen. Every children, attendance, check-in, checkout, and assistant API request requires a verified teacher token. Health checks remain public.
+
+To create another teacher, prepare a private JSON file containing email and password (at least 12 characters), then run node backend/create-teacher.js <private-file-path>. Keep the file outside Git and remove it afterwards. The script creates a confirmed account without sending email and never overwrites an existing account.
+
+Sessions are kept in memory. Refreshing the page or signing out requires signing in again; expired sessions return to the login screen. Each child's card includes Delete entry with confirmation. Deleting a child also deletes linked attendance records through the database's foreign-key cascade.

@@ -73,7 +73,7 @@ function BrandLogo() {
   );
 }
 
-function ChildCard({ child, onCheckIn, onCheckOut, onSelect, selected }) {
+function ChildCard({ child, onCheckIn, onCheckOut, onSelect, selected, onDelete, deleting }) {
   return (
     <div
       onClick={() => onSelect(child)}
@@ -132,6 +132,7 @@ function ChildCard({ child, onCheckIn, onCheckOut, onSelect, selected }) {
           }}
         >✕ Check Out</button>
       </div>
+      <button disabled={deleting} aria-label={`Delete ${child.name}`} onClick={event => { event.stopPropagation(); onDelete(child.id); }} style={{ marginTop: 12, padding: '6px 10px', border: '1px solid #C4606A', borderRadius: 8, background: '#fff', color: '#a12b36', cursor: 'pointer' }}>Delete entry</button>
     </div>
   );
 }
@@ -357,13 +358,20 @@ export default function App() {
     }
   }
 
+  const [deletingId, setDeletingId] = useState(null);
+
   async function deleteChild(id) {
+    if (deletingId !== null) return;
+    const child = children.find(item => item.id === id);
+    if (!window.confirm(`Delete ${child?.name || "this child"}? This also removes their attendance history.`)) return;
+    setDeletingId(id);
     try {
       await request('/children/' + id, { method: 'DELETE' });
       setChildren(previous => previous.filter(child => child.id !== id));
       setSelectedChild(null);
       showToast('Removed', COLORS.rose);
     } catch (error) { showToast(error.message, COLORS.rose); }
+    finally { setDeletingId(null); }
   }
 
   const filtered = children.filter(c => {
@@ -483,6 +491,8 @@ export default function App() {
                   child={child}
                   onCheckIn={checkIn}
                   onCheckOut={checkOut}
+                  onDelete={deleteChild}
+                  deleting={deletingId !== null}
                   onSelect={setSelectedChild}
                   selected={selectedChild?.id === child.id}
                 />
@@ -503,7 +513,7 @@ export default function App() {
                     <div style={{ fontFamily: "'Cotham Sans', sans-serif", fontSize: 18, fontWeight: 700, color: COLORS.navy }}>{c.name}</div>
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                       <button onClick={() => { setEditingChild(c); setShowAdd(true); }} style={{ padding: '6px 10px', borderRadius: 8, border: 'none', background: COLORS.navyLight, color: '#fff', cursor: 'pointer' }}>Edit</button>
-                      <button onClick={async () => { if (!confirm('Remove this child?')) return; await deleteChild(c.id); }} style={{ padding: '6px 10px', borderRadius: 8, border: 'none', background: COLORS.rose, color: '#fff', cursor: 'pointer' }}>Remove</button>
+                      <button disabled={deletingId !== null} onClick={() => deleteChild(c.id)} style={{ padding: '6px 10px', borderRadius: 8, border: 'none', background: COLORS.rose, color: '#fff', cursor: 'pointer' }}>Delete</button>
                       <button onClick={() => setSelectedChild(null)} style={{ background: "none", border: "none", fontSize: 18, cursor: "pointer", color: "#aaa" }}>✕</button>
                     </div>
                   </div>

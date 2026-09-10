@@ -10,7 +10,17 @@ const originalFetch = global.fetch;
 let sent;
 let failure = false;
 global.fetch = async (url, options) => {
-  if (!String(url).startsWith('https://test.supabase.co')) return originalFetch(url, options);
+  if (!String(url).startsWith('https://test.supabase.co')) return originalFetch(url, { ...options, headers: { Authorization: 'Bearer teacher-token', ...options?.headers } });
+  if (String(url).includes('/auth/v1/user')) {
+    const token = new Headers(options?.headers).get('authorization');
+    if (token === 'Bearer invalid-token') return new Response('{"message":"Invalid token"}', { status: 401 });
+    return new Response(JSON.stringify({ id: 'teacher-id', email: 'teacher@example.com', app_metadata: { role: token === 'Bearer student-token' ? 'student' : 'teacher' } }), { headers: { 'Content-Type': 'application/json' } });
+  }
+  if (String(url).includes('/auth/v1/token')) {
+    const credentials = JSON.parse(options.body);
+    if (credentials.password !== 'test-password') return new Response('{"message":"Invalid credentials"}', { status: 400 });
+    return new Response(JSON.stringify({ access_token: 'teacher-token', refresh_token: 'refresh', token_type: 'bearer', expires_in: 3600, user: { id: 'teacher-id', email: credentials.email, app_metadata: { role: credentials.email === 'student@example.com' ? 'student' : 'teacher' } } }), { headers: { 'Content-Type': 'application/json' } });
+  }
   sent = options?.body ? JSON.parse(options.body) : undefined;
   if (failure) throw new TypeError('fetch failed');
   return new Response(JSON.stringify([{ id: 1 }]), { headers: { 'Content-Type': 'application/json' } });
@@ -37,6 +47,22 @@ test('Vercel entry exports a request handler and serves a JSON root', async () =
 test('production configuration preserves deployment variables', () => {
   const config = loadConfig({ NODE_ENV: 'production', SUPABASE_URL: 'https://deployed.supabase.co', SUPABASE_SECRET_KEY: 'server-key' });
   assert.equal(config.SUPABASE_URL, 'https://deployed.supabase.co');
+});
+test('children and mutations require teacher authentication', async () => {
+  for (const [path, method] of [['/api/children', 'GET'], ['/api/children/1', 'DELETE'], ['/api/checkin', 'POST'], ['/api/ai', 'POST']]) {
+    assert.equal((await originalFetch(base + path, { method })).status, 401);
+  }
+  assert.equal((await fetch(base + '/api/children', { headers: { Authorization: 'Bearer invalid-token' } })).status, 401);
+  assert.equal((await fetch(base + '/api/children', { headers: { Authorization: 'Bearer student-token' } })).status, 403);
+  assert.equal((await fetch(base + '/api/children')).status, 200);
+  assert.equal((await fetch(base + '/api/children/1', { method: 'DELETE' })).status, 200);
+});
+test('teacher login accepts valid credentials and rejects other accounts', async () => {
+  for (const [email, password, status] of [['teacher@example.com', 'test-password', 200], ['teacher@example.com', 'wrong', 401], ['student@example.com', 'test-password', 401]]) {
+    const response = await originalFetch(base + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
+    assert.equal(response.status, status);
+    if (status === 200) assert.equal((await response.json()).accessToken, 'teacher-token');
+  }
 });
 test('Supabase credentials are mandatory, including when both settings are empty', () => {
   for (const [url, key] of [['', ''], ['https://test.supabase.co', ''], ['', 'server-key']]) {
