@@ -28,6 +28,14 @@ test('production configuration preserves deployment variables', () => {
   const config = loadConfig({ NODE_ENV: 'production', SUPABASE_URL: 'https://deployed.supabase.co', SUPABASE_SERVICE_ROLE_KEY: 'server-key' });
   assert.equal(config.SUPABASE_URL, 'https://deployed.supabase.co');
 });
+test('Supabase credentials are mandatory, including when both settings are empty', () => {
+  for (const [url, key] of [['', ''], ['https://test.supabase.co', ''], ['', 'server-key']]) {
+    assert.throws(() => loadConfig({
+      NODE_ENV: 'production', SUPABASE_URL: url,
+      SUPABASE_SERVICE_ROLE_KEY: key, SUPABASE_SECRET_KEY: '',
+    }), /Supabase is required/);
+  }
+});
 test('local configuration overrides stale inherited project settings', () => {
   const file = require('dotenv').config({ path: require('path').join(__dirname, '.env'), quiet: true, processEnv: {} }).parsed;
   if (!file?.SUPABASE_URL) return;

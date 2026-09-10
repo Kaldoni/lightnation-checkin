@@ -7,7 +7,8 @@ function loadConfig(env = process.env) {
   const config = env.NODE_ENV === 'production' ? { ...file, ...env } : { ...env, ...file };
   const url = (config.SUPABASE_URL || '').trim();
   const key = (config.SUPABASE_SECRET_KEY || config.SUPABASE_SERVICE_ROLE_KEY || '').trim();
-  if (url || key) {
+  if (!url || !key) throw new Error('Supabase is required. Set SUPABASE_URL and a server secret/service-role key in backend/.env.');
+  {
     let parsed;
     try { parsed = new URL(url); } catch { throw new Error('SUPABASE_URL must be a valid project URL.'); }
     if (!['https:', 'http:'].includes(parsed.protocol) || !key || /dummy|your-project/.test(parsed.hostname) || /your-service-role-key/.test(key)) {
@@ -23,7 +24,7 @@ function databaseError(error) {
     return { status: 503, error: 'Cannot reach Supabase. Check the project URL, network access, and whether the project is paused.' };
   }
   if (['42P01', 'PGRST205'].includes(error.code)) return { status: 503, error: 'Supabase tables are missing. Run backend/supabase-schema.sql in the Supabase SQL editor.' };
-  if (error.code === '23505' || /UNIQUE constraint/.test(error.message)) return { status: 409, error: 'This tag is already assigned to a child.' };
+  if (error.code === '23505') return { status: 409, error: 'This tag is already assigned to a child.' };
   return { status: 500, error: error.message || 'Database request failed.' };
 }
 
