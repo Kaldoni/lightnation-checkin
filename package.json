@@ -1,23 +1,14 @@
 {
-  "name": "lightnation-checkin",
-  "version": "1.0.0",
+  "name": "lightnation-checkin-root",
   "private": true,
   "scripts": {
-    "client:install": "cd client && npm install",
-    "client:dev": "cd client && npm run dev",
-    "client:build": "cd client && npm run build",
-    "server:start": "node server/index.js",
-    "server:dev": "nodemon server/index.js",
-    "dev": "concurrently \"npm:server:dev\" \"npm:client:dev\"",
-    "start": "node server/index.js",
-    "build": "npm run client:build"
+    "dev": "npm --prefix lightnation-checkin run dev",
+    "install:client": "npm --prefix lightnation-checkin run client:install",
+    "start": "npm --prefix lightnation-checkin run start"
   },
   "dependencies": {
-    "express": "^4.18.2",
-    "sqlite3": "^5.1.6"
-  },
-  "devDependencies": {
-    "concurrently": "^8.2.0",
-    "nodemon": "^2.0.22"
+    "@supabase/supabase-js": "^2.116.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2"
   }
 }
