@@ -4,8 +4,7 @@ const { loadConfig, databaseError } = require('./config');
 
 process.env.NODE_ENV = 'production';
 process.env.SUPABASE_URL = 'https://test.supabase.co';
-process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-server-key';
-process.env.SUPABASE_SECRET_KEY = '';
+process.env.SUPABASE_SECRET_KEY = 'test-server-key';
 const originalFetch = global.fetch;
 let sent;
 let failure = false;
@@ -25,14 +24,14 @@ before(async () => {
 after(async () => { await new Promise(resolve => server.close(resolve)); global.fetch = originalFetch; });
 
 test('production configuration preserves deployment variables', () => {
-  const config = loadConfig({ NODE_ENV: 'production', SUPABASE_URL: 'https://deployed.supabase.co', SUPABASE_SERVICE_ROLE_KEY: 'server-key' });
+  const config = loadConfig({ NODE_ENV: 'production', SUPABASE_URL: 'https://deployed.supabase.co', SUPABASE_SECRET_KEY: 'server-key' });
   assert.equal(config.SUPABASE_URL, 'https://deployed.supabase.co');
 });
 test('Supabase credentials are mandatory, including when both settings are empty', () => {
   for (const [url, key] of [['', ''], ['https://test.supabase.co', ''], ['', 'server-key']]) {
     assert.throws(() => loadConfig({
       NODE_ENV: 'production', SUPABASE_URL: url,
-      SUPABASE_SERVICE_ROLE_KEY: key, SUPABASE_SECRET_KEY: '',
+      SUPABASE_SECRET_KEY: key,
     }), /Supabase is required/);
   }
 });

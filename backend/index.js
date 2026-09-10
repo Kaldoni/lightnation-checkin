@@ -11,7 +11,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const supabase = createClient(config.SUPABASE_URL, config.SUPABASE_SERVICE_ROLE_KEY, {
+const supabase = createClient(config.SUPABASE_URL, config.SUPABASE_SECRET_KEY, {
   auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
   global: { fetch: (url, options) => fetch(url, { ...options, signal: AbortSignal.timeout(15000) }) }
 });

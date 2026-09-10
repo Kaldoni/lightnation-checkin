@@ -6,17 +6,17 @@ function loadConfig(env = process.env) {
   const file = dotenv.config({ path: path.join(__dirname, '.env'), quiet: true, processEnv: {} }).parsed || {};
   const config = env.NODE_ENV === 'production' ? { ...file, ...env } : { ...env, ...file };
   const url = (config.SUPABASE_URL || '').trim();
-  const key = (config.SUPABASE_SECRET_KEY || config.SUPABASE_SERVICE_ROLE_KEY || '').trim();
-  if (!url || !key) throw new Error('Supabase is required. Set SUPABASE_URL and a server secret/service-role key in backend/.env.');
+  const key = (config.SUPABASE_SECRET_KEY || '').trim();
+  if (!url || !key) throw new Error('Supabase is required. Set SUPABASE_URL and SUPABASE_SECRET_KEY in backend/.env.');
   {
     let parsed;
     try { parsed = new URL(url); } catch { throw new Error('SUPABASE_URL must be a valid project URL.'); }
-    if (!['https:', 'http:'].includes(parsed.protocol) || !key || /dummy|your-project/.test(parsed.hostname) || /your-service-role-key/.test(key)) {
-      throw new Error('Set a real SUPABASE_URL and server secret/service-role key in backend/.env.');
+    if (!['https:', 'http:'].includes(parsed.protocol) || !key || /dummy|your-project/.test(parsed.hostname) || /your-secret-key/.test(key)) {
+      throw new Error('Set a real SUPABASE_URL and SUPABASE_SECRET_KEY in backend/.env.');
     }
     if (key.startsWith('sb_publishable_')) throw new Error('Use a Supabase server secret key, not a publishable key.');
   }
-  return { ...config, SUPABASE_URL: url, SUPABASE_SERVICE_ROLE_KEY: key };
+  return { ...config, SUPABASE_URL: url, SUPABASE_SECRET_KEY: key };
 }
 
 function databaseError(error) {

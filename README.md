@@ -30,7 +30,7 @@ Use Node.js 22 or newer. From the repository root:
 npm run install:all
 ```
 
-Copy backend/.env.example to backend/.env and set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (or SUPABASE_SECRET_KEY) to your project's server credentials. Never put these keys in frontend code. For a new Supabase database, run backend/supabase-schema.sql in the SQL editor. Startup does not insert demo records into Supabase.
+Copy backend/.env.example to backend/.env and set SUPABASE_URL and SUPABASE_SECRET_KEY to your project's server credentials. Never put these keys in frontend code. For a new Supabase database, run backend/supabase-schema.sql in the SQL editor. Startup does not insert demo records into Supabase.
 
 In development, backend/.env overrides inherited environment variables. In production (NODE_ENV=production), deployment variables take precedence. Supabase credentials are required. Missing or incomplete configuration stops startup with a clear error; connection failures are reported by the API.
 
