@@ -62,6 +62,7 @@ app.get('/api/health', async (req, res) => {
 });
 
 registerAuth(app, config, supabase);
+require('./reports').registerReports(app, supabase, sendDatabaseError);
 
 app.use('/api', (req, res, next) => {
   const isToggle = ['/checkin', '/checkout'].includes(req.path);

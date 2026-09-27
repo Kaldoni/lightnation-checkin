@@ -9,6 +9,7 @@ process.env.SUPABASE_SECRET_KEY = 'test-server-key';
 const originalFetch = global.fetch;
 let sent;
 let failure = false;
+let reportFixture = false;
 global.fetch = async (url, options) => {
   if (!String(url).startsWith('https://test.supabase.co')) return originalFetch(url, { ...options, headers: { Authorization: 'Bearer teacher-token', ...options?.headers } });
   if (String(url).includes('/auth/v1/user')) {
@@ -23,6 +24,11 @@ global.fetch = async (url, options) => {
   }
   sent = options?.body ? JSON.parse(options.body) : undefined;
   if (failure) throw new TypeError('fetch failed');
+  if (reportFixture) {
+    const table = new URL(url).pathname.split('/').pop();
+    const data = table === 'reporting_settings' ? { started_at: '2026-01-01T00:00:00Z' } : table === 'children' ? [{ id: 1, name: 'Test Child', tag: 'T1', created_at: '2026-01-01T00:00:00Z' }] : [];
+    return new Response(JSON.stringify(data), { headers: { 'Content-Type': 'application/json' } });
+  }
   return new Response(JSON.stringify([{ id: 1 }]), { headers: { 'Content-Type': 'application/json' } });
 };
 const app = require('./index');
@@ -108,4 +114,19 @@ test('invalid child data is rejected before database access', async () => {
 test('missing schema and duplicate tags produce actionable errors', () => {
   assert.equal(databaseError({ code: 'PGRST205' }).status, 503);
   assert.equal(databaseError({ code: '23505' }).status, 409);
+});
+
+test('reports require authentication, validate dates, and return JSON or Word', async () => {
+  assert.equal((await originalFetch(base + '/api/reports?type=monthly&date=2026-08-01')).status, 401);
+  assert.equal((await fetch(base + '/api/reports?type=monthly&date=2026-02-30')).status, 400);
+  reportFixture = true;
+  try {
+    const json = await fetch(base + '/api/reports?type=monthly&date=2026-08-01');
+    assert.equal(json.status, 200);
+    assert.equal((await json.json()).frequentAbsentees[0].name, 'Test Child');
+    const word = await fetch(base + '/api/reports?type=monthly&date=2026-08-01&format=docx');
+    assert.equal(word.status, 200);
+    assert.match(word.headers.get('content-disposition'), /lightnation-monthly-2026-08-01.docx/);
+    assert.equal(Buffer.from(await word.arrayBuffer()).subarray(0, 2).toString(), 'PK');
+  } finally { reportFixture = false; }
 });

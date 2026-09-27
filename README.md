@@ -56,6 +56,16 @@ GET /api/health verifies database connectivity and returns { "ok": true, "databa
 
 API routes under /api: children CRUD, checkin, checkout, attendance, and ai. Attendance uses ISO timestamps displayed in local time; editing registration details preserves attendance. AI_KEY, AI_PROVIDER, and AI_MODEL configure the optional AI proxy; without a key it returns database summaries.
 
+## Attendance reports
+
+Run `backend/reporting-migration.sql` in the Supabase SQL editor after the base schema, for both existing and new installations. This installs transactional attendance-history recording and a reporting start date. It is safe to rerun and preserves the original start date. Deploy the updated backend and frontend together; install backend dependencies for Word export.
+
+Teachers can open **Reports**, choose weekly or monthly and a date/month, then select **View report** or **Download .docx**. Both formats include Sunday attendance and absence counts and per-child totals. Monthly reports list children absent for at least three completed Sundays, with names, tags, and missed dates. Downloads require the same teacher authentication as the rest of the app.
+
+Weeks run Monday–Sunday in Africa/Lagos time. Monthly totals count child-Sundays, with unique attendees shown separately. Repeated check-ins on one Sunday count once; checkout does not remove attendance. Sundays before registration, future Sundays, and days before reliable recording began are excluded. The installation day is excluded because its history may be incomplete. Today's Sunday counts are provisional and do not contribute to the recurring-absence threshold until the day ends. No earlier history is inferred from latest-check-in fields. Reports use the current roster; deleting a child also removes their historical records. All eligible Sundays are assumed to be service days.
+
+API: `GET /api/reports?type=weekly|monthly&date=YYYY-MM-DD`, with optional `&format=docx`. Reports are generated from live records on request, not saved snapshots.
+
 ## Teacher access
 
 Teachers sign in with Supabase Auth. Accounts must have app_metadata.role set to teacher by an administrator; there is no public registration screen. Every children, attendance, check-in, checkout, and assistant API request requires a verified teacher token. Health checks remain public.

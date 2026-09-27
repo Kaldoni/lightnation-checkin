@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { request, formatTime } from "./api";
+import Reports from './Reports';
 
 const COLORS = {
   cream: "#FDF6EC",
@@ -442,7 +443,7 @@ export default function App() {
 
           {/* Tabs */}
           <div style={{ display: "flex", gap: 0 }}>
-            {[["checkin", "📋 Check-In"], ["ai", "✦ AI Assistant"]].map(([key, label]) => (
+            {[["reports", "Reports"], ["checkin", "📋 Check-In"], ["ai", "✦ AI Assistant"]].map(([key, label]) => (
               <div
                 key={key}
                 onClick={() => setTab(key)}
@@ -536,7 +537,7 @@ export default function App() {
               );
             })()}
           </>
-        ) : (
+        ) : tab === 'reports' ? <Reports /> : (
           <div style={{ height: 520 }}>
             <AIChat children={children} />
           </div>

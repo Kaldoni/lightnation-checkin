@@ -7,6 +7,20 @@ const { request, setAccessToken } = await import(`data:text/javascript;base64,${
 const originalFetch = globalThis.fetch;
 after(() => { globalThis.fetch = originalFetch; });
 
+test('Word downloads use teacher authentication and reject non-document responses', async () => {
+  setAccessToken('teacher-token');
+  globalThis.fetch = async (url, options) => {
+    assert.equal(options.headers.Authorization, 'Bearer teacher-token');
+    return new Response('PK-document', { headers: { 'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' } });
+  };
+  assert.equal(await (await request('/reports', { responseType: 'blob' })).text(), 'PK-document');
+  globalThis.fetch = async () => new Response('<html>Proxy error</html>', { headers: { 'Content-Type': 'text/html' } });
+  await assert.rejects(request('/reports', { responseType: 'blob' }), /did not return a Word document/);
+  globalThis.fetch = async () => new Response('{"error":"Session expired"}', { status: 401 });
+  await assert.rejects(request('/reports', { responseType: 'blob' }), /Session expired/);
+  setAccessToken('');
+});
+
 test('form requests expose nested server error messages instead of object coercion', async () => {
   globalThis.fetch = async () => new Response(JSON.stringify({ error: { message: 'This tag is already assigned.' } }), { status: 409 });
   await assert.rejects(request('/children', { method: 'POST', body: {} }), { message: 'This tag is already assigned.' });

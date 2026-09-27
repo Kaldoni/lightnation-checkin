@@ -6,11 +6,12 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "test": "node --test server.test.js"
+    "test": "node --test server.test.js reports.test.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.116.0",
     "cors": "^2.8.6",
+    "docx": "^9.7.2",
     "dotenv": "^17.4.2",
     "express": "^4.18.2",
     "lightnation-checkin": "file:.."
