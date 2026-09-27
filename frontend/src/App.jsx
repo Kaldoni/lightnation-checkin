@@ -26,54 +26,16 @@ function Badge({ color, children }) {
 }
 
 function BrandLogo() {
-  const rays = Array.from({ length: 16 }, (_, index) => ({
-    id: index,
-    rotate: index * 22.5,
-  }));
-
   return (
-    <div
-      aria-label="LightNation logo"
-      style={{
-        width: 52,
-        height: 52,
-        borderRadius: "50%",
-        background: "#1A2744",
-        position: "relative",
-        overflow: "hidden",
-        boxShadow: "0 0 0 4px rgb(255, 255, 255)",
-        flexShrink: 0,
-      }}
-    >
-      {rays.map((ray) => (
-        <span
-          key={ray.id}
-          style={{
-            position: "absolute",
-            left: "50%",
-            top: "50%",
-            width: "18%",
-            height: "80%",
-            transform: `translate(-50%, -50%) rotate(${ray.rotate}deg) translateY(-18%)`,
-            transformOrigin: "center center",
-            borderRadius: 8,
-            background: "rgba(255,255,255,0.08)",
-            boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.05)",
-          }}
-        />
-      ))}
-      <div
-        style={{
-          position: "absolute",
-          inset: "22%",
-          borderRadius: "50%",
-          background: "rgba(255,255,255,0.12)",
-        }}
-      />
-    </div>
+    <img
+      src="/favicon.ico"
+      alt="Light Nation logo"
+      width={60}
+      height={60}
+      style={{ objectFit: "contain", flexShrink: 0 }}
+    />
   );
 }
-
 function ChildCard({ child, onCheckIn, onCheckOut, onSelect, selected, onDelete, deleting }) {
   return (
     <div
@@ -182,7 +144,7 @@ function AIChat({ children: childList }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#fff", borderRadius: 20, overflow: "hidden", border: `1px solid #e8ddd0` }}>
-      <div style={{ background: COLORS.red, padding: "16px 20px", display: "flex", alignItems: "center", gap: 10 }}>
+      <div style={{ background: COLORS.navy, padding: "16px 20px", display: "flex", alignItems: "center", gap: 10 }}>
         <div style={{ width: 36, height: 36, borderRadius: "20%", background: COLORS.gold, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>✦</div>
         <div>
           <div style={{ color: "#fff", fontFamily: "'Cotham Sans', sans-serif", fontWeight: 700, fontSize: 15 }}>AI Assistant</div>
@@ -404,7 +366,7 @@ export default function App() {
       {showAdd && <AddChildModal onAdd={handleSaveChild} onClose={() => { setShowAdd(false); setEditingChild(null); }} initial={editingChild} />}
 
       {/* Header */}
-      <div style={{ background: COLORS.red, padding: "20px 24px 0" }}>
+      <div style={{ background: COLORS.navy, padding: "20px 24px 0" }}>
         <div style={{ maxWidth: 900, margin: "0 auto" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -443,14 +405,14 @@ export default function App() {
 
           {/* Tabs */}
           <div style={{ display: "flex", gap: 0 }}>
-            {[["reports", "Reports"], ["checkin", "📋 Check-In"], ["ai", "✦ AI Assistant"]].map(([key, label]) => (
+            {[["checkin", "📋 Check-In"], ["reports", "Reports"], ["ai", "✦ AI Assistant"]].map(([key, label]) => (
               <div
                 key={key}
                 onClick={() => setTab(key)}
                 style={{
                   padding: "10px 22px", cursor: "pointer", fontSize: 13, fontWeight: 700,
                   borderBottom: tab === key ? `3px solid ${COLORS.gold}` : "3px solid transparent",
-                  color: tab === key ? COLORS.goldLight : "#888",
+                  color: tab === key ? COLORS.goldLight : "#d6ddec",
                   transition: "all 0.2s"
                 }}
               >
