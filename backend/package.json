@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "test": "node --test server.test.js reports.test.js"
+    "test": "node --test server.test.js reports.test.js",
+    "migrate:supabase-to-firebase": "node firebase-migration.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.116.0",
@@ -14,6 +15,7 @@
     "docx": "^9.7.2",
     "dotenv": "^17.4.2",
     "express": "^4.18.2",
+    "firebase-admin": "^12.4.0",
     "lightnation-checkin": "file:.."
   },
   "devDependencies": {

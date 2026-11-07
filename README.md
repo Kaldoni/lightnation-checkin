@@ -1,6 +1,6 @@
 # LightNation Check-In
 
-Church check-in app with a React/Vite frontend and an Express backend using Supabase as its only database.
+Church check-in app with a React/Vite frontend and an Express backend that can run against either Supabase or Firebase. The repo includes a migration script that exports rows from Supabase and imports them into Firebase collections.
 
 ## Directory layout
 

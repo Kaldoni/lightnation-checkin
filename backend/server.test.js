@@ -54,6 +54,20 @@ test('production configuration preserves deployment variables', () => {
   const config = loadConfig({ NODE_ENV: 'production', SUPABASE_URL: 'https://deployed.supabase.co', SUPABASE_SECRET_KEY: 'server-key' });
   assert.equal(config.SUPABASE_URL, 'https://deployed.supabase.co');
 });
+
+test('Firebase configuration is accepted and preferred when present', () => {
+  const config = loadConfig({
+    NODE_ENV: 'production',
+    FIREBASE_PROJECT_ID: 'demo-project',
+    FIREBASE_CLIENT_EMAIL: 'firebase-admin@example.com',
+    FIREBASE_PRIVATE_KEY: '-----BEGIN PRIVATE KEY-----\nabc\n-----END PRIVATE KEY-----\n',
+    FIREBASE_DATABASE_URL: 'https://demo-project-default-rtdb.firebaseio.com'
+  });
+  assert.equal(config.DATABASE_PROVIDER, 'firebase');
+  assert.equal(config.FIREBASE_PROJECT_ID, 'demo-project');
+  assert.equal(config.FIREBASE_DATABASE_URL, 'https://demo-project-default-rtdb.firebaseio.com');
+});
+
 test('children and mutations require teacher authentication', async () => {
   for (const [path, method] of [['/api/children', 'GET'], ['/api/children/1', 'DELETE'], ['/api/checkin', 'POST'], ['/api/ai', 'POST']]) {
     assert.equal((await originalFetch(base + path, { method })).status, 401);

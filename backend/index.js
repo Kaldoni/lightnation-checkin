@@ -3,7 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const cors = require('cors');
 const { loadConfig, databaseError } = require('./config');
-const { createClient } = require('@supabase/supabase-js');
+const { createDatabaseClient } = require('./database');
 const { registerAuth } = require('./auth');
 
 const config = loadConfig();
@@ -13,13 +13,10 @@ app.use(cors());
 app.use(express.json());
 
 if (process.env.VERCEL) {
-  app.get('/', (req, res) => res.json({ ok: true, service: 'LightNation API', database: 'supabase' }));
+  app.get('/', (req, res) => res.json({ ok: true, service: 'LightNation API', database: config.DATABASE_PROVIDER || 'supabase' }));
 }
 
-const supabase = createClient(config.SUPABASE_URL, config.SUPABASE_SECRET_KEY, {
-  auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
-  global: { fetch: (url, options) => fetch(url, { ...options, signal: AbortSignal.timeout(15000) }) }
-});
+const database = createDatabaseClient(config);
 
 function toSupabaseChild(row = {}) {
   return {
@@ -54,15 +51,15 @@ function sendDatabaseError(res, error) {
 
 app.get('/api/health', async (req, res) => {
   try {
-    const { error } = await supabase.from('children').select('id').limit(1);
+    const { error } = await database.from('children').select('id').limit(1);
     if (error) return sendDatabaseError(res, error);
 
-    return res.json({ ok: true, database: 'supabase' });
+    return res.json({ ok: true, database: config.DATABASE_PROVIDER || 'supabase' });
   } catch (error) { return sendDatabaseError(res, error); }
 });
 
-registerAuth(app, config, supabase);
-require('./reports').registerReports(app, supabase, sendDatabaseError);
+registerAuth(app, config, database);
+require('./reports').registerReports(app, database, sendDatabaseError);
 
 app.use('/api', (req, res, next) => {
   const isToggle = ['/checkin', '/checkout'].includes(req.path);
@@ -82,7 +79,7 @@ app.use('/api', (req, res, next) => {
 // API routes
 app.get('/api/children', async (req, res) => {
   try {
-    const { data, error } = await supabase.from('children').select('*').order('id');
+    const { data, error } = await database.from('children').select('*').order('id');
     if (error) return sendDatabaseError(res, error);
     return res.json((data || []).map(fromSupabaseChild));
   } catch (error) {
@@ -94,7 +91,7 @@ app.post('/api/children', async (req, res) => {
   const { name, age, guardian, guardianPhone, allergies, tag } = req.body;
 
   try {
-    const { data, error } = await supabase.from('children').insert([toSupabaseChild({ name, age, guardian, guardianPhone, allergies, tag })]).select('id');
+    const { data, error } = await database.from('children').insert([toSupabaseChild({ name, age, guardian, guardianPhone, allergies, tag })]).select('id');
     if (error) return sendDatabaseError(res, error);
     return res.json({ id: data?.[0]?.id ?? null });
   } catch (error) {
@@ -107,7 +104,7 @@ app.put('/api/children/:id', async (req, res) => {
   const { name, age, guardian, guardianPhone, allergies, tag } = req.body;
 
   try {
-    const { error } = await supabase.from('children').update(toSupabaseChild({
+    const { error } = await database.from('children').update(toSupabaseChild({
       name,
       age,
       guardian,
@@ -126,7 +123,7 @@ app.delete('/api/children/:id', async (req, res) => {
   const id = Number(req.params.id);
 
   try {
-    const { error } = await supabase.from('children').delete().eq('id', id);
+    const { error } = await database.from('children').delete().eq('id', id);
     if (error) return sendDatabaseError(res, error);
     return res.json({ ok: true });
   } catch (error) {
@@ -138,7 +135,7 @@ app.post('/api/checkin', async (req, res) => {
   const { id } = req.body;
   try {
     const time = new Date().toISOString();
-    const { error } = await supabase.from('children').update({
+    const { error } = await database.from('children').update({
       checked_in: true,
       last_check_in: time,
       last_check_out: null
@@ -154,7 +151,7 @@ app.post('/api/checkout', async (req, res) => {
   const { id } = req.body;
   try {
     const time = new Date().toISOString();
-    const { error } = await supabase.from('children').update({
+    const { error } = await database.from('children').update({
       checked_in: false,
       last_check_out: time
     }).eq('id', id);
@@ -167,7 +164,7 @@ app.post('/api/checkout', async (req, res) => {
 
 app.get('/api/attendance', async (req, res) => {
   try {
-    const { data, error } = await supabase.from('children').select('id, checked_in');
+    const { data, error } = await database.from('children').select('id, checked_in');
     if (error) return sendDatabaseError(res, error);
     const total = data.length;
     const inside = data.filter((row) => Boolean(row.checked_in)).length;
@@ -186,7 +183,7 @@ app.post('/api/ai', async (req, res) => {
     const prompt = (req.body && (req.body.prompt || (req.body.messages && req.body.messages.map((m) => m.content || m.text || '').join('\n')))) || '';
 
     try {
-      const { data, error } = await supabase.from('children').select('name, checked_in, last_check_in, last_check_out, guardian, allergies, tag');
+      const { data, error } = await database.from('children').select('name, checked_in, last_check_in, last_check_out, guardian, allergies, tag');
       if (error) return sendDatabaseError(res, error);
       const mappedData = (data || []).map(fromSupabaseChild);
       const text = prompt.toLowerCase();
@@ -248,5 +245,5 @@ if (!process.env.VERCEL && fs.existsSync(clientDist)) {
 app.use((req, res) => res.status(404).json({ error: 'Route not found.' }));
 
 const PORT = config.PORT || 3000;
-if (!process.env.VERCEL && require.main === module) app.listen(PORT, () => console.log(`Server listening on http://localhost:${PORT} using Supabase`));
+if (!process.env.VERCEL && require.main === module) app.listen(PORT, () => console.log(`Server listening on http://localhost:${PORT} using ${config.DATABASE_PROVIDER || 'Supabase'}`));
 module.exports = app;

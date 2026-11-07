@@ -72,7 +72,7 @@ async function allRows(query) {
 }
 
 function registerReports(app, supabase, sendDatabaseError) {
-  app.get('/api/reports', async (req, res) => {
+  app.get(['/api/reports', '/reports'], async (req, res) => {
     const { type, date, format } = req.query;
     let range;
     try { range = period(type, date); if (format && format !== 'docx') throw new Error('Unsupported report format.'); }

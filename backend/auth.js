@@ -1,6 +1,6 @@
 const { createClient } = require('@supabase/supabase-js');
 
-function registerAuth(app, config, supabase) {
+function registerAuth(app, config, database) {
   app.post('/api/auth/login', async (req, res) => {
     res.set('Cache-Control', 'no-store');
     const { email, password } = req.body || {};
@@ -8,15 +8,19 @@ function registerAuth(app, config, supabase) {
       return res.status(400).json({ error: 'Enter your email and password.' });
     }
     try {
-      // Keep password sessions separate from the privileged database client.
-      const authClient = createClient(config.SUPABASE_URL, config.SUPABASE_SECRET_KEY, {
+      const isFirebase = config.DATABASE_PROVIDER === 'firebase';
+      const authClient = isFirebase ? database.auth : createClient(config.SUPABASE_URL, config.SUPABASE_SECRET_KEY, {
         auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
       });
-      const { data, error } = await authClient.auth.signInWithPassword({ email: email.trim(), password });
-      if (error || !data.session || data.user?.app_metadata?.role !== 'teacher') {
+
+      const { data, error } = isFirebase
+        ? await authClient.signInWithPassword({ email: email.trim(), password })
+        : await authClient.auth.signInWithPassword({ email: email.trim(), password });
+
+      if (error || !data?.session || data.user?.app_metadata?.role !== 'teacher') {
         return res.status(401).json({ error: 'Incorrect email or password, or this account is not a teacher.' });
       }
-      return res.json({ accessToken: data.session.access_token, email: data.user.email });
+      return res.json({ accessToken: data.session.access_token || data.session.idToken || data.session.accessToken, email: data.user.email });
     } catch {
       return res.status(503).json({ error: 'Sign-in is unavailable. Please try again.' });
     }
@@ -27,8 +31,8 @@ function registerAuth(app, config, supabase) {
     const token = req.headers.authorization?.match(/^Bearer (\S+)$/i)?.[1];
     if (!token) return res.status(401).json({ error: 'Please sign in to continue.' });
     try {
-      const { data, error } = await supabase.auth.getUser(token);
-      if (error || !data.user) return res.status(401).json({ error: 'Your session expired. Please sign in again.' });
+      const { data, error } = await database.auth.getUser(token);
+      if (error || !data?.user) return res.status(401).json({ error: 'Your session expired. Please sign in again.' });
       if (data.user.app_metadata?.role !== 'teacher') return res.status(403).json({ error: 'Teacher access is required.' });
       next();
     } catch {
@@ -36,5 +40,7 @@ function registerAuth(app, config, supabase) {
     }
   });
 }
+
+module.exports = { registerAuth };
 
 module.exports = { registerAuth };
