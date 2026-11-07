@@ -6,6 +6,10 @@
       "destination": "https://lightnation-api.vercel.app/api/:path*"
     },
     {
+      "source": "/reports/:path*",
+      "destination": "https://lightnation-api.vercel.app/reports/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
